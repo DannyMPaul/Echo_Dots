@@ -2,8 +2,12 @@
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Morse & Braille Translator</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <style>
         :root[data-theme="light"] {
             --bg-color: #f5f5f5;
@@ -23,21 +27,37 @@
             --button-hover: #0056b3;
         }
 
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .card {
             background-color: var(--container-bg);
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
         .input-group {
@@ -46,24 +66,34 @@
 
         textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            margin-top: 5px;
-            min-height: 100px;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin-top: 8px;
+            min-height: 120px;
             resize: vertical;
             background-color: var(--container-bg);
             color: var(--text-color);
+            font-size: 16px;
         }
 
         button {
             background-color: var(--button-bg);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            padding: 12px 24px;
+            border-radius: 8px;
             cursor: pointer;
             margin: 5px;
+            font-size: 16px;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
         }
 
         button:hover {
@@ -71,38 +101,83 @@
         }
 
         .direction-toggle {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
             margin: 20px 0;
-            text-align: center;
         }
 
-        .direction-toggle button.active {
-            opacity: 1;
-            font-weight: bold;
-        }
-
-        .direction-toggle button:not(.active) {
-            opacity: 0.6;
+        .direction-toggle button {
+            flex: 1;
+            min-width: 150px;
+            max-width: 200px;
         }
 
         #morse-input-area {
             display: flex;
             gap: 10px;
             margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        #morse-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 100%;
         }
 
         #morse-buttons button {
-            width: 50px;
+            flex: 1;
+            min-width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
         }
 
         #morse-buttons .space-button {
-            width: 100px;  /* Make space button wider */
-            margin-left: 10px; /* Add some spacing from dot/dash buttons */
+            flex: 2;
         }
 
         .theme-toggle {
-            position: absolute;
+            position: fixed;
             top: 20px;
             right: 20px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            button {
+                padding: 10px 20px;
+            }
+
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+                text-align: center;
+            }
+        }
+
+        .braille-text {
+            font-size: 28px;
+            line-height: 1.5;
+            letter-spacing: 4px;
         }
 
         #loading {
@@ -115,101 +190,194 @@
             color: #ff4444;
             margin: 10px 0;
             display: none;
+            text-align: center;
         }
 
-        .braille-text {
-            font-size: 24px;
-            line-height: 1.5;
-            letter-spacing: 2px;
+        .install-prompt {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--button-bg);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        #morse-input-button {
+            width: 100%;
+            height: 80px;
+            font-size: 18px;
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            touch-action: none; /* Prevent default touch actions */
+            grid-column: 1 / -1;
+        }
+
+        .morse-input-container {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .morse-input-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .morse-input-grid .manual-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .morse-input-grid .manual-buttons button {
+            flex: 1;
+            height: 60px;
+        }
+
+        .morse-input-grid .manual-buttons .space-button {
+            flex: 2;
+        }
+
+        .input-feedback {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 16px;
+            color: var(--text-color);
         }
     </style>
 </head>
 <body>
     <div class="theme-toggle">
-        <button onclick="toggleTheme()" id="theme-btn">🌙 Dark Mode</button>
+        <button onclick="toggleTheme()" id="theme-btn">🌙</button>
     </div>
 
     <div class="container">
-        <h1>Morse & Braille Translator</h1>
-        
-        <div class="direction-toggle">
-            <button onclick="setDirection('to_morse')" id="to-morse-btn">Text → Morse</button>
-            <button onclick="setDirection('to_braille')" id="to-braille-btn">Text → Braille</button>
-            <button onclick="setDirection('to_text')" id="to-text-btn">Morse → Text</button>
-        </div>
+        <div class="card">
+            <h1>Morse & Braille Translator</h1>
+            
+            <div class="direction-toggle">
+                <button onclick="setDirection('to_morse')" id="to-morse-btn">Text → Morse</button>
+                <button onclick="setDirection('to_braille')" id="to-braille-btn">Text → Braille</button>
+                <button onclick="setDirection('to_text')" id="to-text-btn">Morse → Text</button>
+            </div>
 
-        <div class="input-group">
-            <label for="input">Input:</label>
-            <textarea id="input" placeholder="Enter text or morse code..."></textarea>
-            <div id="morse-input-area">
-                <div id="morse-buttons">
-                    <button onclick="addMorse('.')">.</button>
-                    <button onclick="addMorse('-')">-</button>
-                    <button onclick="addMorse(' ')" class="space-button">Space</button>
+            <div class="input-group">
+                <label for="input">Input:</label>
+                <textarea id="input" placeholder="Enter text or morse code..."></textarea>
+                
+                <!-- Combined Morse Input Area -->
+                <div id="morse-inputs" class="morse-input-container">
+                    <div class="morse-input-grid">
+                        <button id="morse-input-button">Tap or hold for Morse input</button>
+                        <div class="manual-buttons">
+                            <button onclick="addMorse('.')">.</button>
+                            <button onclick="addMorse('-')">−</button>
+                            <button onclick="addMorse(' ')" class="space-button">Space</button>
+                        </div>
+                    </div>
+                    <div class="input-feedback">Tap for dot (.) - Hold for dash (-)</div>
                 </div>
             </div>
-        </div>
 
-        <div class="input-group">
-            <button id="translate-btn">Translate</button>
-            <div id="loading">Translating...</div>
-            <div id="error" class="error"></div>
-        </div>
+            <div class="input-group">
+                <button id="translate-btn" class="translate-button">Translate</button>
+                <button id="play-morse" class="play-button" style="display: none;">
+                    Play Morse Pattern
+                </button>
+                <div id="loading">Translating...</div>
+                <div id="error" class="error"></div>
+            </div>
 
-        <div class="input-group">
-            <label for="output">Output:</label>
-            <textarea id="output" readonly></textarea>
+            <div class="input-group">
+                <label for="output">Output:</label>
+                <textarea id="output" readonly></textarea>
+            </div>
         </div>
     </div>
 
+    <div id="install-prompt" class="install-prompt">
+        <button onclick="installPWA()">Install App</button>
+    </div>
+
     <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('ServiceWorker registered'))
+                    .catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+        }
+
+        // PWA Installation
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-prompt').style.display = 'block';
+        });
+
+        async function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('install-prompt').style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        }
+
+        // Main App Logic
         let currentDirection = 'to_morse';
         const morseArea = document.getElementById('morse-input-area');
         const themeBtn = document.getElementById('theme-btn');
         const translateBtn = document.getElementById('translate-btn');
         
-        // Theme handling
         function toggleTheme() {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
             
             html.setAttribute('data-theme', newTheme);
-            themeBtn.textContent = newTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+            themeBtn.textContent = newTheme === 'light' ? '🌙' : '☀️';
             
-            // Save theme preference
             localStorage.setItem('theme', newTheme);
         }
         
-        // Load saved theme
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
-        themeBtn.textContent = savedTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+        themeBtn.textContent = savedTheme === 'light' ? '🌙' : '☀️';
 
         function setDirection(direction) {
             currentDirection = direction;
-            // Update button styles
-            document.getElementById('to-morse-btn').classList.toggle('active', direction === 'to_morse');
-            document.getElementById('to-braille-btn').classList.toggle('active', direction === 'to_braille');
-            document.getElementById('to-text-btn').classList.toggle('active', direction === 'to_text');
+            document.querySelectorAll('.direction-toggle button').forEach(btn => {
+                btn.style.opacity = btn.id.includes(direction) ? 1 : 0.6;
+            });
             
-            // Show/hide morse input buttons only for morse to text
-            morseArea.style.display = direction === 'to_text' ? 'flex' : 'none';
+            // Show/hide morse input areas
+            const morseInputs = document.getElementById('morse-inputs');
+            const playMorseBtn = document.getElementById('play-morse');
             
-            // Clear input/output
-            document.getElementById('input').value = '';
+            morseInputs.style.display = direction === 'to_text' ? 'block' : 'none';
+            playMorseBtn.style.display = 'none';
+            
+            const input = document.getElementById('input');
+            input.value = '';
+            input.placeholder = direction === 'to_text' ? 
+                'Use the buttons below or type dots (.) and dashes (-)...' :
+                'Enter text to convert...';
+            
             document.getElementById('output').value = '';
             document.getElementById('error').style.display = 'none';
             
-            // Update placeholder text
-            const input = document.getElementById('input');
-            if (direction === 'to_morse' || direction === 'to_braille') {
-                input.placeholder = 'Enter text to convert...';
-            } else {
-                input.placeholder = 'Enter morse code using dots (.) and dashes (-) separated by spaces...';
-            }
-            
-            // Add braille specific styling to output if needed
             const output = document.getElementById('output');
             output.classList.toggle('braille-text', direction === 'to_braille');
         }
@@ -217,14 +385,119 @@
         function addMorse(symbol) {
             const input = document.getElementById('input');
             input.value += symbol;
+            
+            // Haptic feedback for mobile devices
+            if ('vibrate' in navigator) {
+                navigator.vibrate(symbol === '.' ? 50 : 100);
+            }
         }
 
-        // Add click event listener for translate button
+        // Touch/hold handling for morse input
+        const morseInputBtn = document.getElementById('morse-input-button');
+        let touchStartTime = 0;
+        let isHolding = false;
+        const HOLD_THRESHOLD = 200; // Time in ms to distinguish between tap and hold
+
+        morseInputBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            touchStartTime = Date.now();
+            isHolding = true;
+        });
+
+        morseInputBtn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            isHolding = false;
+            const touchDuration = Date.now() - touchStartTime;
+            
+            if (touchDuration < HOLD_THRESHOLD) {
+                addMorse('.');
+            } else {
+                addMorse('-');
+            }
+        });
+
+        morseInputBtn.addEventListener('touchcancel', function(e) {
+            e.preventDefault();
+            isHolding = false;
+        });
+
+        // Prevent default touch behavior
+        morseInputBtn.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        });
+
+        // Also support mouse events for desktop testing
+        morseInputBtn.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            touchStartTime = Date.now();
+            isHolding = true;
+        });
+
+        morseInputBtn.addEventListener('mouseup', function(e) {
+            e.preventDefault();
+            isHolding = false;
+            const touchDuration = Date.now() - touchStartTime;
+            
+            if (touchDuration < HOLD_THRESHOLD) {
+                addMorse('.');
+            } else {
+                addMorse('-');
+            }
+        });
+
+        morseInputBtn.addEventListener('mouseleave', function(e) {
+            e.preventDefault();
+            isHolding = false;
+        });
+
+        // Morse code timing constants (in milliseconds)
+        const MORSE_TIMING = {
+            DOT: 200,
+            DASH: 500,
+            SYMBOL_GAP: 200,
+            LETTER_GAP: 500,
+            WORD_GAP: 1000
+        };
+
+        async function playMorseVibration(morseText) {
+            if (!('vibrate' in navigator)) {
+                console.log('Vibration not supported');
+                return;
+            }
+
+            const pattern = [];
+            const symbols = morseText.split('');
+
+            for (let i = 0; i < symbols.length; i++) {
+                const symbol = symbols[i];
+                
+                if (symbol === '.') {
+                    pattern.push(MORSE_TIMING.DOT);
+                } else if (symbol === '-') {
+                    pattern.push(MORSE_TIMING.DASH);
+                } else if (symbol === ' ') {
+                    pattern.push(MORSE_TIMING.WORD_GAP);
+                }
+
+                // Add gap between symbols (unless it's a space or last symbol)
+                if (i < symbols.length - 1 && symbol !== ' ') {
+                    pattern.push(MORSE_TIMING.SYMBOL_GAP);
+                }
+            }
+
+            try {
+                await navigator.vibrate(pattern);
+            } catch (err) {
+                console.error('Vibration failed:', err);
+            }
+        }
+
         translateBtn.addEventListener('click', async function() {
             const input = document.getElementById('input').value.trim();
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const output = document.getElementById('output');
+            const playMorseBtn = document.getElementById('play-morse');
             
             if (!input) {
                 error.textContent = 'Please enter some text to translate';
@@ -235,6 +508,7 @@
             loading.style.display = 'block';
             error.style.display = 'none';
             output.value = '';
+            playMorseBtn.style.display = 'none';
 
             try {
                 const response = await fetch('/translate', {
@@ -254,6 +528,22 @@
 
                 const data = await response.json();
                 output.value = data.result || 'No translation available';
+
+                // Show play button only for text to morse translation
+                if (currentDirection === 'to_morse' && 'vibrate' in navigator) {
+                    playMorseBtn.style.display = 'inline-block';
+                    playMorseBtn.onclick = () => playMorseVibration(data.result);
+                    
+                    // Auto-play vibration on mobile for text to morse only
+                    if (window.innerWidth <= 600) {
+                        playMorseVibration(data.result);
+                    }
+                }
+
+                // Scroll to output on mobile
+                if (window.innerWidth <= 600) {
+                    output.scrollIntoView({ behavior: 'smooth' });
+                }
             } catch (err) {
                 error.textContent = 'Translation failed. Please try again.';
                 error.style.display = 'block';
@@ -263,15 +553,21 @@
             }
         });
 
-        // Initialize direction
+        // Initialize
         setDirection('to_morse');
 
-        // Add keyboard shortcut for translation (Enter key)
+        // Keyboard shortcuts
         document.getElementById('input').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 translateBtn.click();
             }
+        });
+
+        // Handle orientation changes
+        window.addEventListener('orientationchange', function() {
+            // Adjust viewport height for mobile browsers
+            document.documentElement.style.height = `${window.innerHeight}px`;
         });
     </script>
 </body>

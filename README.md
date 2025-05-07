@@ -1,16 +1,44 @@
-# Morse Code Translator
+# Morse & Braille Translator
 
-A Python-based Morse code translator that supports:
+A modern web application that translates between text, Morse code, and Braille with support for both desktop and mobile devices.
 
-- Text to Morse code conversion
-- Morse code to text conversion
-- Voice input and output
-- Interactive Morse code input using spacebar (short press for dot, long press for dash)
+## Features
+
+### Text to Morse Code
+
+- Convert any text to Morse code
+- Automatic vibration feedback on mobile devices
+- "Play Morse Pattern" button to feel the pattern through vibration
+- Support for letters, numbers, and common punctuation
+
+### Morse Code to Text
+
+Multiple input methods:
+
+- Tap/hold button: Quick tap for dot (.), long press for dash (-)
+- Manual buttons: Separate buttons for dot, dash, and space
+- Direct typing: Type dots (.) and dashes (-) manually
+- Haptic feedback on mobile devices
+
+### Text to Braille
+
+- Convert text to Unicode Braille patterns
+- Support for letters, numbers, and punctuation marks
+- Optimized display with proper spacing and sizing
+
+### Progressive Web App (PWA) Features
+
+- Works offline
+- Installable on mobile devices
+- Responsive design for all screen sizes
+- Dark/Light theme support
+- Add to home screen functionality
 
 ## Requirements
 
 - Python 3.x
 - Required packages listed in `requirements.txt`
+- Modern web browser with JavaScript enabled
 
 ## Installation
 
@@ -29,32 +57,39 @@ A Python-based Morse code translator that supports:
 
 ## Usage
 
-Run the translator from the src directory:
+1. Start the Flask server:
+   ```
+   cd src
+   python app.py
+   ```
+2. Access the application:
+   - Desktop: Open `http://localhost:5000` in your browser
+   - Mobile: Connect to the same network as the server and visit `http://<server-ip>:5000`
 
-```
-python morse_translator.py
-```
+### Mobile Features
 
-### Features
+- Haptic feedback for Morse code input/output
+- Touch-optimized interface
+- Installable as a standalone app
+- Works offline once installed
 
-1. Text/Voice to Morse Code:
+### Keyboard Shortcuts
 
-   - Type text or use voice input
-   - Get Morse code output
+- Enter: Translate input
+- Space: Add space in Morse code input
+- Tap/Hold: Generate Morse code dots and dashes
 
-2. Morse Code to Text/Voice:
+## Timing Reference
 
-   - Input Morse code using keyboard (spacebar method) or type dots and dashes
-   - Get text output and voice pronunciation
-
-### Keyboard Input Method
-
-- Short spacebar press (< 0.2s) = dot (.)
-- Long spacebar press (≥ 0.2s) = dash (-)
-- Press ESC to finish input
+- Dot (.) = Short press/vibration (200ms)
+- Dash (-) = Long press/vibration (500ms)
+- Symbol gap = 200ms
+- Letter gap = 500ms
+- Word gap = 1000ms
 
 ## Future Enhancements
 
-- Braille language support (coming soon)
-- Additional input methods
+- Enhanced Braille support with additional patterns
+- Voice input/output improvements
 - Support for more special characters
+- Additional language support
