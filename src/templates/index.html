@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morse & Braille Translator</title>
+    <style>
+        :root[data-theme="light"] {
+            --bg-color: #f5f5f5;
+            --container-bg: white;
+            --text-color: #333;
+            --border-color: #ddd;
+            --button-bg: #007bff;
+            --button-hover: #0056b3;
+        }
+        
+        :root[data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-color: #e0e0e0;
+            --border-color: #404040;
+            --button-bg: #0066cc;
+            --button-hover: #0056b3;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-top: 5px;
+            min-height: 100px;
+            resize: vertical;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+        }
+
+        button {
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: var(--button-hover);
+        }
+
+        .direction-toggle {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .direction-toggle button.active {
+            opacity: 1;
+            font-weight: bold;
+        }
+
+        .direction-toggle button:not(.active) {
+            opacity: 0.6;
+        }
+
+        #morse-input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        #morse-buttons button {
+            width: 50px;
+        }
+
+        #morse-buttons .space-button {
+            width: 100px;  /* Make space button wider */
+            margin-left: 10px; /* Add some spacing from dot/dash buttons */
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        #loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .error {
+            color: #ff4444;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .braille-text {
+            font-size: 24px;
+            line-height: 1.5;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-toggle">
+        <button onclick="toggleTheme()" id="theme-btn">🌙 Dark Mode</button>
+    </div>
+
+    <div class="container">
+        <h1>Morse & Braille Translator</h1>
+        
+        <div class="direction-toggle">
+            <button onclick="setDirection('to_morse')" id="to-morse-btn">Text → Morse</button>
+            <button onclick="setDirection('to_braille')" id="to-braille-btn">Text → Braille</button>
+            <button onclick="setDirection('to_text')" id="to-text-btn">Morse → Text</button>
+        </div>
+
+        <div class="input-group">
+            <label for="input">Input:</label>
+            <textarea id="input" placeholder="Enter text or morse code..."></textarea>
+            <div id="morse-input-area">
+                <div id="morse-buttons">
+                    <button onclick="addMorse('.')">.</button>
+                    <button onclick="addMorse('-')">-</button>
+                    <button onclick="addMorse(' ')" class="space-button">Space</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <button id="translate-btn">Translate</button>
+            <div id="loading">Translating...</div>
+            <div id="error" class="error"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="output">Output:</label>
+            <textarea id="output" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        let currentDirection = 'to_morse';
+        const morseArea = document.getElementById('morse-input-area');
+        const themeBtn = document.getElementById('theme-btn');
+        const translateBtn = document.getElementById('translate-btn');
+        
+        // Theme handling
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            html.setAttribute('data-theme', newTheme);
+            themeBtn.textContent = newTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+            
+            // Save theme preference
+            localStorage.setItem('theme', newTheme);
+        }
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        themeBtn.textContent = savedTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+
+        function setDirection(direction) {
+            currentDirection = direction;
+            // Update button styles
+            document.getElementById('to-morse-btn').classList.toggle('active', direction === 'to_morse');
+            document.getElementById('to-braille-btn').classList.toggle('active', direction === 'to_braille');
+            document.getElementById('to-text-btn').classList.toggle('active', direction === 'to_text');
+            
+            // Show/hide morse input buttons only for morse to text
+            morseArea.style.display = direction === 'to_text' ? 'flex' : 'none';
+            
+            // Clear input/output
+            document.getElementById('input').value = '';
+            document.getElementById('output').value = '';
+            document.getElementById('error').style.display = 'none';
+            
+            // Update placeholder text
+            const input = document.getElementById('input');
+            if (direction === 'to_morse' || direction === 'to_braille') {
+                input.placeholder = 'Enter text to convert...';
+            } else {
+                input.placeholder = 'Enter morse code using dots (.) and dashes (-) separated by spaces...';
+            }
+            
+            // Add braille specific styling to output if needed
+            const output = document.getElementById('output');
+            output.classList.toggle('braille-text', direction === 'to_braille');
+        }
+
+        function addMorse(symbol) {
+            const input = document.getElementById('input');
+            input.value += symbol;
+        }
+
+        // Add click event listener for translate button
+        translateBtn.addEventListener('click', async function() {
+            const input = document.getElementById('input').value.trim();
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const output = document.getElementById('output');
+            
+            if (!input) {
+                error.textContent = 'Please enter some text to translate';
+                error.style.display = 'block';
+                return;
+            }
+
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            output.value = '';
+
+            try {
+                const response = await fetch('/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: input,
+                        direction: currentDirection
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Translation failed');
+                }
+
+                const data = await response.json();
+                output.value = data.result || 'No translation available';
+            } catch (err) {
+                error.textContent = 'Translation failed. Please try again.';
+                error.style.display = 'block';
+                console.error('Translation error:', err);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        // Initialize direction
+        setDirection('to_morse');
+
+        // Add keyboard shortcut for translation (Enter key)
+        document.getElementById('input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                translateBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
